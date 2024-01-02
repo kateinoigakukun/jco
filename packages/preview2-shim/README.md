@@ -2,9 +2,9 @@
 
 WASI Preview2 implementations for Node.js & browsers.
 
-Browser support is considered experimental, and not currently suitable for production applications.
+In Node.js, comprehensive compatibility is available for all WASI subsystems.
 
-Node.js support is currently being stabilized, which can be tracked in https://github.com/bytecodealliance/jco/milestone/1.
+Browser support is considered experimental, and not currently suitable for production applications.
 
 # License
 
