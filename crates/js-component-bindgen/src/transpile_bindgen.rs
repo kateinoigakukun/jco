@@ -294,8 +294,25 @@ impl<'a> JsBindgen<'a> {
             uwrite!(
                 output,
                 "\
-                        {}\
-                        {};
+                        let gen = (function* init () {{
+                            {}\
+                            {};
+                        }})();
+                        let async = false, resolve, reject;
+                        function runNext (val) {{
+                            try {{
+                                const {{ value, done }} = gen.next(val);
+                                if (!value) return resolve();
+                                async = true;
+                                value.then(val => done ? resolve(val) : runNext(val), reject);
+                            }}
+                            catch (e) {{
+                                reject(e);
+                            }}
+                        }}
+                        runNext(null);
+                        if (async)
+                            return new Promise((_resolve, _reject) => (resolve = _resolve, reject = _reject));
                     }}
                 ",
                 &self.src.js_init as &str,
@@ -326,8 +343,25 @@ impl<'a> JsBindgen<'a> {
                     {}
                     {}
                     {maybe_init_export}const $init = (async() => {{
-                        {}\
-                        {}\
+                        let gen = (function* init () {{
+                            {}\
+                            {}\
+                        }})();
+                        let async = false, resolve, reject;
+                        function runNext (val) {{
+                            try {{
+                                const {{ value, done }} = gen.next(val);
+                                if (!value) return resolve();
+                                async = true;
+                                value.then(val => done ? resolve(val) : runNext(val), reject);
+                            }}
+                            catch (e) {{
+                                reject(e);
+                            }}
+                        }}
+                        runNext(null);
+                        if (async)
+                            return new Promise((_resolve, _reject) => (resolve = _resolve, reject = _reject));
                     }})();
                     {maybe_init}\
                 ",
@@ -936,7 +970,7 @@ impl<'a> Instantiator<'a, '_> {
             Some(InstantiationMode::Async) | None => {
                 uwriteln!(
                     self.src.js_init,
-                    "({{ exports: exports{iu32} }} = await {instantiate}(await module{}{imports}));",
+                    "({{ exports: exports{iu32} }} = yield {instantiate}(yield module{}{imports}));",
                     idx.as_u32()
                 )
             }
