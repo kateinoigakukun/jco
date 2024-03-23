@@ -298,21 +298,27 @@ impl<'a> JsBindgen<'a> {
                             {}\
                             {};
                         }})();
-                        let async = false, resolve, reject;
-                        function runNext (val) {{
+                        let promise, resolve, reject;
+                        function runNext (value) {{
                             try {{
-                                const {{ value, done }} = gen.next(val);
-                                if (!value) return resolve();
-                                async = true;
-                                value.then(val => done ? resolve(val) : runNext(val), reject);
+                                let done;
+                                do {{
+                                    ({{ value, done }} = gen.next(value));
+                                }} while (!(value instanceof Promise) && !done);
+                                if (done) {{
+                                    if (resolve) resolve(value);
+                                    else return value;
+                                }}
+                                if (!promise) promise = new Promise((_resolve, _reject) => (resolve = _resolve, reject = _reject));
+                                value.then(nextVal => done ? resolve() : runNext(nextVal), reject);
                             }}
                             catch (e) {{
-                                reject(e);
+                                if (reject) reject(e);
+                                else throw e;
                             }}
                         }}
                         runNext(null);
-                        if (async)
-                            return new Promise((_resolve, _reject) => (resolve = _resolve, reject = _reject));
+                        return promise;
                     }}
                 ",
                 &self.src.js_init as &str,
@@ -347,21 +353,27 @@ impl<'a> JsBindgen<'a> {
                             {}\
                             {}\
                         }})();
-                        let async = false, resolve, reject;
-                        function runNext (val) {{
+                        let promise, resolve, reject;
+                        function runNext (value) {{
                             try {{
-                                const {{ value, done }} = gen.next(val);
-                                if (!value) return resolve();
-                                async = true;
-                                value.then(val => done ? resolve(val) : runNext(val), reject);
+                                let done;
+                                do {{
+                                    ({{ value, done }} = gen.next(value));
+                                }} while (!(value instanceof Promise) && !done);
+                                if (done) {{
+                                    if (resolve) resolve(value);
+                                    else return value;
+                                }}
+                                if (!promise) promise = new Promise((_resolve, _reject) => (resolve = _resolve, reject = _reject));
+                                value.then(nextVal => done ? resolve() : runNext(nextVal), reject);
                             }}
                             catch (e) {{
-                                reject(e);
+                                if (reject) reject(e);
+                                else throw e;
                             }}
                         }}
                         runNext(null);
-                        if (async)
-                            return new Promise((_resolve, _reject) => (resolve = _resolve, reject = _reject));
+                        return promise;
                     }})();
                     {maybe_init}\
                 ",
