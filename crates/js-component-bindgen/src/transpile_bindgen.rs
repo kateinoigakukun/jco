@@ -246,34 +246,22 @@ impl<'a> JsBindgen<'a> {
             self.opts.instantiation.is_some(),
         );
 
-        match self.opts.instantiation {
-            Some(InstantiationMode::Async) => {
-                uwrite!(
-                    output,
-                    "\
+        if let Some(instantiation) = &self.opts.instantiation {
+            uwrite!(
+                output,
+                "\
+                    {}
+                    export function instantiate(getCoreModule, imports, instantiateCore = {}) {{
                         {}
-                        export async function instantiate(getCoreModule, imports, instantiateCore = WebAssembly.instantiate) {{
-                            {}
-                    ",
-                    &js_intrinsics as &str,
-                    &compilation_promises as &str,
-                )
-            }
-
-            Some(InstantiationMode::Sync) => {
-                uwrite!(
-                    output,
-                    "\
-                        {}
-                        export function instantiate(getCoreModule, imports, instantiateCore = (module, importObject) => new WebAssembly.Instance(module, importObject)) {{
-                            {}
-                    ",
-                    &js_intrinsics as &str,
-                    &compilation_promises as &str,
-                )
-            }
-
-            None => {}
+                ",
+                &js_intrinsics as &str,
+                match instantiation {
+                    InstantiationMode::Async => "WebAssembly.instantiate",
+                    InstantiationMode::Sync =>
+                        "(module, importObject) => new WebAssembly.Instance(module, importObject)",
+                },
+                &compilation_promises as &str,
+            );
         }
 
         let imports_object = if self.opts.instantiation.is_some() {
@@ -317,8 +305,8 @@ impl<'a> JsBindgen<'a> {
                                 else throw e;
                             }}
                         }}
-                        runNext(null);
-                        return promise;
+                        const maybeSyncReturn = runNext(null);
+                        return promise || maybeSyncReturn;
                     }}
                 ",
                 &self.src.js_init as &str,
@@ -348,7 +336,7 @@ impl<'a> JsBindgen<'a> {
                 "\
                     {}
                     {}
-                    {maybe_init_export}const $init = (async() => {{
+                    {maybe_init_export}const $init = (() => {{
                         let gen = (function* init () {{
                             {}\
                             {}\
@@ -372,8 +360,8 @@ impl<'a> JsBindgen<'a> {
                                 else throw e;
                             }}
                         }}
-                        runNext(null);
-                        return promise;
+                        const maybeSyncReturn = runNext(null);
+                        return promise || maybeSyncReturn;
                     }})();
                     {maybe_init}\
                 ",
