@@ -353,7 +353,7 @@ impl<'a> JsBindgen<'a> {
                                     else return value;
                                 }}
                                 if (!promise) promise = new Promise((_resolve, _reject) => (resolve = _resolve, reject = _reject));
-                                value.then(nextVal => done ? resolve() : runNext(nextVal), reject);
+                                value.then(runNext, reject);
                             }}
                             catch (e) {{
                                 if (reject) reject(e);
