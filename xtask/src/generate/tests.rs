@@ -41,6 +41,7 @@ const DENO_IGNORE: &[&str] = &[
     "preview1_remove_directory",
     "preview1_symlink_filestat",
     "preview1_unlink_file_trailing_slashes",
+    "preview2_file_read_write",
     "preview2_sleep",
     "preview2_tcp_bind",
     "preview2_tcp_connect",
